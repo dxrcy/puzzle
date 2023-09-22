@@ -36,6 +36,47 @@ impl Grid {
             col: 0,
         }
     }
+
+    pub fn get(&self, x: usize, y: usize) -> Option<&TileValue> {
+        self.0.get(y)?.get(x)
+    }
+
+    pub fn find_empty(&self, x: usize, y: usize) -> Option<(usize, usize)> {
+        let (start_x, start_y) = (x as isize, y as isize);
+
+        // Cardinal directions
+        // Clockwise from top (top, right, bottom, left)
+        let directions = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+
+        // Search in spiral, clockwise outwards, up to length of full board
+        for dist in 0..GRID_SIZE as isize {
+            for (dx, dy) in directions {
+                // Get new x,y values
+                let (x, y) = (start_x + dx * dist, start_y + dy * dist);
+
+                // Safely convert signed pairs to unsigned
+                let Some((x, y)) = isize_to_usize_pairs(x, y) else {
+                    continue;
+                };
+
+                // Tile must exist on board
+                if let Some(tile) = self.get(x, y) {
+                    // Tile must be empty
+                    if tile.is_none() {
+                        return Some((x as usize, y as usize));
+                    }
+                }
+            }
+        }
+
+        None
+    }
+}
+
+fn isize_to_usize_pairs(x: isize, y: isize) -> Option<(usize, usize)> {
+    let x = x.try_into().ok()?;
+    let y = y.try_into().ok()?;
+    Some((x, y))
 }
 
 pub struct GridIterator<'a> {

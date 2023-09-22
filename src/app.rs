@@ -1,27 +1,43 @@
 use ggez::{
     event::EventHandler,
     graphics::{self, DrawMode, DrawParam, Mesh, Rect, TextLayout},
+    mint::Point2,
     Context,
 };
 
 use crate::{
     color,
     grid::{Grid, GridTile},
-    TEXT_SIZE, TILE_SIZE,
+    GRID_SIZE, TEXT_SIZE, TILE_SIZE,
 };
 
 pub struct App {
     grid: Grid,
+    active_tile: Option<(usize, usize)>,
 }
 
 impl App {
     pub fn new(_ctx: &mut Context) -> Self {
-        Self { grid: Grid::new() }
+        Self {
+            grid: Grid::new(),
+            active_tile: None,
+        }
     }
 }
 
 impl EventHandler for App {
-    fn update(&mut self, _ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+        let Point2 { x, y } = ctx.mouse.position();
+
+        let (x, y) = (x as f32 / TILE_SIZE, y as f32 / TILE_SIZE);
+
+        let range = 0.0..GRID_SIZE as f32;
+        self.active_tile = if range.contains(&x) && range.contains(&y) {
+            Some((x as usize, y as usize))
+        } else {
+            None
+        };
+
         Ok(())
     }
 
@@ -51,6 +67,43 @@ impl EventHandler for App {
                     .dest([(x as f32 + 0.5) * TILE_SIZE, (y as f32 + 0.5) * TILE_SIZE])
                     .color(color::TILE_TEXT);
                 canvas.draw(&text, text_param);
+            }
+        }
+
+        if let Some((x, y)) = self.active_tile {
+            let point = Point2 {
+                x: x as f32 + 0.5,
+                y: y as f32 + 0.5,
+            };
+
+            let mesh = graphics::Mesh::new_circle(
+                ctx,
+                DrawMode::stroke(0.05),
+                point,
+                0.3,
+                0.01,
+                color!(255, 180, 180),
+            )?;
+            canvas.draw(&mesh, param);
+
+            if let Some((new_x, new_y)) = self.grid.find_empty(x, y) {
+                let new_point = Point2 {
+                    x: new_x as f32 + 0.5,
+                    y: new_y as f32 + 0.5,
+                };
+
+                let mesh = graphics::Mesh::new_circle(
+                    ctx,
+                    DrawMode::stroke(0.05),
+                    new_point,
+                    0.3,
+                    0.01,
+                    color!(180, 255, 180),
+                )?;
+                canvas.draw(&mesh, param);
+
+                let mesh = graphics::Mesh::new_line(ctx, &[point, new_point], 0.1, color!(RED))?;
+                canvas.draw(&mesh, param);
             }
         }
 
