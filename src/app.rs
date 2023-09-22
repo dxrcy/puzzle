@@ -1,5 +1,5 @@
 use ggez::{
-    event::EventHandler,
+    event::{EventHandler, MouseButton},
     graphics::{self, DrawMode, DrawParam, Mesh, Rect, TextLayout},
     mint::Point2,
     Context,
@@ -23,6 +23,10 @@ impl App {
             active_tile: None,
         }
     }
+
+    pub fn reset(&mut self, ctx: &mut Context) {
+        *self = Self::new(ctx)
+    }
 }
 
 impl EventHandler for App {
@@ -37,6 +41,18 @@ impl EventHandler for App {
         } else {
             None
         };
+
+        if ctx.mouse.button_just_pressed(MouseButton::Left) {
+            if let Some((x, y)) = self.active_tile {
+                self.grid.shift_tiles(x, y);
+            }
+        }
+
+        if self.grid.is_complete() {
+            println!("Well done!");
+            // std::thread::sleep(std::time::Duration::from_secs(1));
+            self.reset(ctx)
+        }
 
         Ok(())
     }
@@ -100,9 +116,6 @@ impl EventHandler for App {
                     0.01,
                     color!(180, 255, 180),
                 )?;
-                canvas.draw(&mesh, param);
-
-                let mesh = graphics::Mesh::new_line(ctx, &[point, new_point], 0.1, color!(RED))?;
                 canvas.draw(&mesh, param);
             }
         }

@@ -1,3 +1,6 @@
+use rand::seq::SliceRandom;
+use rand::Rng;
+
 use crate::GRID_SIZE;
 
 type TileValue = Option<u32>;
@@ -9,22 +12,20 @@ impl Grid {
     pub fn new() -> Self {
         let mut grid = GridArray::default();
 
-        grid[0][0] = Some(1);
-        grid[0][1] = Some(2);
-        grid[0][2] = Some(3);
-        grid[0][3] = Some(4);
-        grid[1][0] = Some(5);
-        grid[1][1] = Some(6);
-        // grid[1][2] = Some(7);
-        grid[1][3] = Some(8);
-        grid[2][0] = Some(9);
-        grid[2][1] = Some(10);
-        grid[2][2] = Some(11);
-        grid[2][3] = Some(12);
-        grid[3][0] = Some(13);
-        grid[3][1] = Some(14);
-        grid[3][2] = Some(15);
-        grid[3][3] = Some(16);
+        // Get all tile values
+        let mut values: Vec<TileValue> = (0..GRID_SIZE.pow(2) as u32)
+            .map(|value| if value == 0 { None } else { Some(value) })
+            .collect();
+
+        // Shuffle tile values
+        let mut rng = rand::thread_rng();
+        values.shuffle(&mut rng);
+
+        for row in &mut grid {
+            for tile in row {
+                *tile = values.pop().unwrap()
+            }
+        }
 
         Self(grid)
     }
@@ -37,11 +38,19 @@ impl Grid {
         }
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<&TileValue> {
+    fn get(&self, x: usize, y: usize) -> Option<&TileValue> {
         self.0.get(y)?.get(x)
+    }
+    fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut TileValue> {
+        self.0.get_mut(y)?.get_mut(x)
     }
 
     pub fn find_empty(&self, x: usize, y: usize) -> Option<(usize, usize)> {
+        // Check if starting tile exists on board, and is not empty
+        if !self.get(x, y).is_some_and(|tile| tile.is_some()) {
+            return None;
+        }
+
         let (start_x, start_y) = (x as isize, y as isize);
 
         // Cardinal directions
@@ -70,6 +79,31 @@ impl Grid {
         }
 
         None
+    }
+
+    pub fn shift_tiles(&mut self, x: usize, y: usize) {
+        let Some((new_x, new_y)) = self.find_empty(x, y) else {
+            return;
+        };
+        *self.get_mut(new_x, new_y).unwrap() = *self.get(x, y).unwrap();
+        *self.get_mut(x, y).unwrap() = None;
+    }
+
+    pub fn is_complete(&self) -> bool {
+        for GridTile { x, y, tile } in self.iter() {
+            let expected_value = y * GRID_SIZE + x + 1;
+
+            let expected_tile = if expected_value >= GRID_SIZE.pow(2) {
+                None
+            } else {
+                Some(expected_value as u32)
+            };
+
+            if tile != &expected_tile {
+                return false;
+            }
+        }
+        true
     }
 }
 
