@@ -1,9 +1,16 @@
 /// Returns `ggez::graphics::Color` value, as const
 macro_rules! color {
-    ($name:ident) => {
+    ($name:ident $(,)?) => {
         ::ggez::graphics::Color::$name
     };
-    ($r:expr, $g:expr, $b:expr) => {
+    ($hex:literal $(,)?) => {
+        color!(
+            ($hex >> 16) & 0xFF,
+            ($hex >> 8) & 0xFF,
+            $hex & 0xFF,
+        )
+    };
+    ($r:expr, $g:expr, $b:expr $(,)?) => {
         ::ggez::graphics::Color::new(
             $r as u8 as f32 / 255.0,
             $g as u8 as f32 / 255.0,
@@ -11,7 +18,7 @@ macro_rules! color {
             255.0,
         )
     };
-    ($r:expr, $g:expr, $b:expr, $a:expr) => {
+    ($r:expr, $g:expr, $b:expr, $a:expr $(,)?) => {
         ::ggez::graphics::Color::new(
             $r as u8 as f32 / 255.0,
             $g as u8 as f32 / 255.0,

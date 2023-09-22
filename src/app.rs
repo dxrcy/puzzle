@@ -8,7 +8,7 @@ use ggez::{
 use crate::{
     color,
     grid::{Grid, GridTile},
-    GRID_SIZE, TEXT_SIZE, TILE_SIZE,
+    GRID_SIZE, MARGIN, PADDING, SIZE, TEXT_SIZE, TILE_SIZE,
 };
 
 pub struct App {
@@ -59,63 +59,63 @@ impl EventHandler for App {
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
         let mut canvas = graphics::Canvas::from_frame(ctx, color::BACKGROUND);
 
-        // Scale to tile size
-        let param = DrawParam::default().scale([TILE_SIZE, TILE_SIZE]);
-
         for GridTile { x, y, tile } in self.grid.iter() {
-            let rect = Rect::new(x as f32, y as f32, 1.0, 1.0);
+            let rect = Rect::new(
+                (x as f32 + PADDING + MARGIN) * SIZE,
+                (y as f32 + PADDING + MARGIN) * SIZE,
+                (1.0 - PADDING * 2.0) * SIZE,
+                (1.0 - PADDING * 2.0) * SIZE,
+            );
 
             if let Some(tile) = tile {
+                let tile_color = if self.active_tile == Some((x, y)) {
+                    color::TILE_ACTIVE
+                } else {
+                    color::TILE
+                };
+
                 // Draw rectangle
-                let mesh = Mesh::new_rectangle(ctx, DrawMode::fill(), rect, color::TILE_FILL)?;
-                canvas.draw(&mesh, param);
-                let mesh =
-                    Mesh::new_rectangle(ctx, DrawMode::stroke(0.1), rect, color::TILE_STROKE)?;
-                canvas.draw(&mesh, param);
+                let mesh = Mesh::new_rounded_rectangle(
+                    ctx,
+                    DrawMode::fill(),
+                    rect,
+                    0.1 * SIZE,
+                    tile_color,
+                )?;
+                canvas.draw(&mesh, DrawParam::default());
 
                 let mut text = graphics::Text::new(tile.to_string());
-                text.set_scale(TILE_SIZE * TEXT_SIZE);
+                text.set_scale(SIZE * TEXT_SIZE);
                 text.set_layout(TextLayout::center());
                 // Set position to center of rectangle
                 // This must use fresh DrawParam, to not blur the text
                 let text_param = DrawParam::default()
-                    .dest([(x as f32 + 0.5) * TILE_SIZE, (y as f32 + 0.5) * TILE_SIZE])
-                    .color(color::TILE_TEXT);
+                    .dest([
+                        (x as f32 + 0.5 + MARGIN) * SIZE,
+                        (y as f32 + 0.53 + MARGIN) * SIZE,
+                    ])
+                    .color(color::TEXT);
                 canvas.draw(&text, text_param);
             }
         }
 
         if let Some((x, y)) = self.active_tile {
-            let point = Point2 {
-                x: x as f32 + 0.5,
-                y: y as f32 + 0.5,
-            };
-
-            let mesh = graphics::Mesh::new_circle(
-                ctx,
-                DrawMode::stroke(0.05),
-                point,
-                0.3,
-                0.01,
-                color!(255, 180, 180),
-            )?;
-            canvas.draw(&mesh, param);
-
             if let Some((new_x, new_y)) = self.grid.find_empty(x, y) {
-                let new_point = Point2 {
-                    x: new_x as f32 + 0.5,
-                    y: new_y as f32 + 0.5,
-                };
+                let rect = Rect::new(
+                    (new_x as f32 + PADDING + MARGIN) * SIZE,
+                    (new_y as f32 + PADDING + MARGIN) * SIZE,
+                    (1.0 - PADDING * 2.0) * SIZE,
+                    (1.0 - PADDING * 2.0) * SIZE,
+                );
 
-                let mesh = graphics::Mesh::new_circle(
+                let mesh = Mesh::new_rounded_rectangle(
                     ctx,
-                    DrawMode::stroke(0.05),
-                    new_point,
-                    0.3,
-                    0.01,
-                    color!(180, 255, 180),
+                    DrawMode::fill(),
+                    rect,
+                    0.1 * SIZE,
+                    color::EMPTY_CELL,
                 )?;
-                canvas.draw(&mesh, param);
+                canvas.draw(&mesh, DrawParam::default());
             }
         }
 
