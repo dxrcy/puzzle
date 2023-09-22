@@ -50,8 +50,7 @@ impl EventHandler for App {
 
         if self.grid.is_complete() {
             println!("Well done!");
-            // std::thread::sleep(std::time::Duration::from_secs(1));
-            self.reset(ctx)
+            std::process::exit(0)
         }
 
         Ok(())
