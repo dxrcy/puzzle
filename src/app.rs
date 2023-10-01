@@ -33,7 +33,7 @@ impl EventHandler for App {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
         let Point2 { x, y } = ctx.mouse.position();
 
-        let (x, y) = (x as f32 / TILE_SIZE, y as f32 / TILE_SIZE);
+        let (x, y) = (x / TILE_SIZE, y / TILE_SIZE);
 
         let range = 0.0..GRID_SIZE as f32;
         self.active_tile = if range.contains(&x) && range.contains(&y) {

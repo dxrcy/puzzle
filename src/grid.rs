@@ -22,7 +22,9 @@ impl Grid {
 
         for row in &mut grid {
             for tile in row {
-                *tile = values.pop().expect("grid size is larger than amount of generated values")
+                *tile = values
+                    .pop()
+                    .expect("grid size is larger than amount of generated values")
             }
         }
 
@@ -71,7 +73,7 @@ impl Grid {
                 if let Some(tile) = self.get((x, y)) {
                     // Tile must be empty
                     if tile.is_none() {
-                        return Some((x as usize, y as usize));
+                        return Some((x, y));
                     }
                 }
             }
@@ -114,7 +116,7 @@ impl Grid {
 
         // Move tiles as described above
         for (pos_future_value, pos_tile) in tiles {
-            let future_value = self.get(pos_future_value).expect("tile should exist").clone();
+            let future_value = *self.get(pos_future_value).expect("tile should exist");
             let tile = self.get_mut(pos_tile).expect("tile should exist");
             *tile = future_value;
         }
