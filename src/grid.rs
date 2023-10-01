@@ -22,7 +22,7 @@ impl Grid {
 
         for row in &mut grid {
             for tile in row {
-                *tile = values.pop().unwrap()
+                *tile = values.pop().expect("grid size is larger than amount of generated values")
             }
         }
 
@@ -37,16 +37,16 @@ impl Grid {
         }
     }
 
-    fn get(&self, x: usize, y: usize) -> Option<&TileValue> {
+    fn get(&self, (x, y): (usize, usize)) -> Option<&TileValue> {
         self.0.get(y)?.get(x)
     }
-    fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut TileValue> {
+    fn get_mut(&mut self, (x, y): (usize, usize)) -> Option<&mut TileValue> {
         self.0.get_mut(y)?.get_mut(x)
     }
 
     pub fn find_empty(&self, x: usize, y: usize) -> Option<(usize, usize)> {
         // Check if starting tile exists on board, and is not empty
-        if !self.get(x, y).is_some_and(|tile| tile.is_some()) {
+        if !self.get((x, y)).is_some_and(|tile| tile.is_some()) {
             return None;
         }
 
@@ -68,7 +68,7 @@ impl Grid {
                 };
 
                 // Tile must exist on board
-                if let Some(tile) = self.get(x, y) {
+                if let Some(tile) = self.get((x, y)) {
                     // Tile must be empty
                     if tile.is_none() {
                         return Some((x as usize, y as usize));
@@ -81,11 +81,45 @@ impl Grid {
     }
 
     pub fn shift_tiles(&mut self, x: usize, y: usize) {
-        let Some((new_x, new_y)) = self.find_empty(x, y) else {
+        let Some((nx, ny)) = self.find_empty(x, y) else {
             return;
         };
-        *self.get_mut(new_x, new_y).unwrap() = *self.get(x, y).unwrap();
-        *self.get_mut(x, y).unwrap() = None;
+
+        // Case for each direction: Clockwise from top (UP, RIGHT, DOWN, LEFT)
+        //     order of if-else chain should not matter, but is used as fallback for invalid game
+        //     state
+        // Create a vector tuples, which describe how tiles move:
+        //     0: position of tile to move value from
+        //     1: position of tile to move value to
+        // Order of list is important, because tile value is changed on the next step of loop
+        // Iterator is reversed for RIGHT and DOWN, because tiles move in negative order
+        // Example shown in 'right' direction
+        let tiles: Vec<_> = if ny < y {
+            // UP
+            (ny..y).map(|y| ((x, y + 1), (x, y))).collect()
+        } else if nx > x {
+            // RIGHT
+            // For every position `x` (going right) from old position (leftmost) to
+            //     new position (rightmost), create a 'move', which is the tile position, and
+            //     the tile to the right
+            // Reversed, so that loop goes right to left
+            (x..nx).map(|x| ((x, y), (x + 1, y))).rev().collect()
+        } else if ny > y {
+            // DOWN
+            (y..ny).map(|y| ((x, y), (x, y + 1))).rev().collect()
+        } else {
+            // LEFT
+            (nx..x).map(|x| ((x + 1, y), (x, y))).collect()
+        };
+
+        // Move tiles as described above
+        for (pos_future_value, pos_tile) in tiles {
+            let future_value = self.get(pos_future_value).expect("tile should exist").clone();
+            let tile = self.get_mut(pos_tile).expect("tile should exist");
+            *tile = future_value;
+        }
+        // Tile which was clicked, should be removed (same as swapping with (nx,ny))
+        *self.get_mut((x, y)).expect("tile should exist") = None;
     }
 
     pub fn is_complete(&self) -> bool {

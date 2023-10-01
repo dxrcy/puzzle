@@ -2,7 +2,7 @@ use ggez::{
     event::{EventHandler, MouseButton},
     graphics::{self, DrawMode, DrawParam, Mesh, Rect, TextLayout},
     mint::Point2,
-    Context,
+    Context, winit::event::VirtualKeyCode,
 };
 
 use crate::{
@@ -51,6 +51,10 @@ impl EventHandler for App {
         if self.grid.is_complete() {
             println!("Well done!");
             std::process::exit(0)
+        }
+
+        if ctx.keyboard.is_key_just_pressed(VirtualKeyCode::R) {
+            self.reset(ctx);
         }
 
         Ok(())

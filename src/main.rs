@@ -9,8 +9,8 @@ use puzzle::TILE_SIZE;
 
 fn main() -> GameResult {
     let window_mode = WindowMode::default()
-        .dimensions(TILE_SIZE * GRID_SIZE as f32, TILE_SIZE * GRID_SIZE as f32)
-        .borderless(true);
+        .dimensions(TILE_SIZE * GRID_SIZE as f32, TILE_SIZE * GRID_SIZE as f32);
+    // .borderless(true);
 
     // Create app context
     let (mut ctx, event_loop) = ContextBuilder::new("15puzzle", "darcy")
