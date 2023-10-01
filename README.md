@@ -2,5 +2,3 @@
 
 Simple 15 puzzle game made with ggez in Rust.
 
-TODO: Remove teleportation (too OP)
-
